@@ -9,7 +9,7 @@
   /* ----------------------------------------------------------------
      FILL THESE IN. Supabase dashboard -> Project Settings -> API.
      ---------------------------------------------------------------- */
-  var SUPABASE_URL      = "https://YOUR-PROJECT.supabase.co";
+  var SUPABASE_URL      = "https://slpbmkrqreafvnxfwecv.supabase.co/rest/v1/";
   var SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
   var BASE_CAMP_PASSWORD = "planpivot2026";   // set to "" to remove the gate
 </script>
@@ -954,7 +954,7 @@
     await askPassword();
 
     var configured = SUPABASE_URL.indexOf("YOUR-PROJECT") === -1 &&
-                     SUPABASE_ANON_KEY.indexOf("YOUR-ANON-KEY") === -1;
+                     SUPABASE_ANON_KEY.indexOf("sb_publishable_q9FmLCTMvR_wBQcXeyarCg_EDPLBuN5") === -1;
 
     if (!configured || !window.supabase) {
       applySeed();
