@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  /* ----------------------------------------------------------------
+     FILL THESE IN. Supabase dashboard -> Project Settings -> API.
+     ---------------------------------------------------------------- */
+  var SUPABASE_URL      = "https://YOUR-PROJECT.supabase.co";
+  var SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
+  var BASE_CAMP_PASSWORD = "planpivot2026";   // set to "" to remove the gate
+</script>
+<style>
+  :root { color-scheme: light dark; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  html, body { margin: 0; }
+  body { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: #faf7f1; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<style>
+  #gate { position:fixed; inset:0; z-index:9999; display:grid; place-items:center;
+          background:#0E1B2E; padding:24px; }
+  #gate .gate-box { max-width:380px; width:100%; text-align:center; color:#F1ECE1;
+          font-family:"IBM Plex Sans",-apple-system,"Segoe UI",sans-serif; }
+  #gate h2 { font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
+          font-weight:700; font-size:28px; margin:0 0 6px; }
+  #gate p { margin:0 0 20px; color:#8FA2BC; font-size:14px; }
+  #gate .gate-row { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  #gate input { flex:1 1 180px; padding:10px 12px; border:1px solid #2C3B52; border-radius:3px;
+          background:#16263F; color:#F1ECE1; font-size:15px; }
+  #gate .btn { background:#B8512F; color:#fff; border:0; border-radius:3px; padding:10px 18px;
+          cursor:pointer; font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
+          font-weight:600; font-size:14px; letter-spacing:.04em; text-transform:uppercase; }
+  #gate .btn:hover { background:#D2673F; }
+  #gate .gate-err { color:#E2867B; margin:14px 0 0; font-size:13px; }
+</style>
+<div id="gate" hidden></div>
+<title>Base Camp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+  :root {
+    --navy:#16263F; --navy-deep:#0E1B2E; --navy-soft:#22385A;
+    --paper:#FAF7F1; --cream:#F1ECE1; --card:#FFFFFF;
+    --ink:#16263F; --ink-2:#495B75; --muted:#7A889E;
+    --line:#DED7C8; --line-soft:#EBE5D9;
+    --terra:#B8512F; --terra-lift:#D2673F; --terra-wash:#F6E7DF;
+    --good:#2F6B50; --good-wash:#E2EFE7;
+    --warn:#97681B; --warn-wash:#F6EBD5;
+    --crit:#8C2F26; --crit-wash:#F6E0DC;
+    --shadow: 0 1px 2px rgba(22,38,63,.06), 0 8px 24px -16px rgba(22,38,63,.35);
+    --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+    --cond: "IBM Plex Sans Condensed", "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --navy:#0D1727; --navy-deep:#08101C; --navy-soft:#1B2C46;
+      --paper:#0D1727; --cream:#142238; --card:#15243A;
+      --ink:#EDE7DA; --ink-2:#B9C2D2; --muted:#8595AC;
+      --line:#27384F; --line-soft:#1E2E44;
+      --terra:#E0805B; --terra-lift:#EE9573; --terra-wash:#33221B;
+      --good:#6FBF95; --good-wash:#162C22;
+      --warn:#D8AC5E; --warn-wash:#2E2415;
+      --crit:#E2867B; --crit-wash:#331D1A;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"] {
+    --navy:#0D1727; --navy-deep:#08101C; --navy-soft:#1B2C46;
+    --paper:#0D1727; --cream:#142238; --card:#15243A;
+    --ink:#EDE7DA; --ink-2:#B9C2D2; --muted:#8595AC;
+    --line:#27384F; --line-soft:#1E2E44;
+    --terra:#E0805B; --terra-lift:#EE9573; --terra-wash:#33221B;
+    --good:#6FBF95; --good-wash:#162C22;
+    --warn:#D8AC5E; --warn-wash:#2E2415;
+    --crit:#E2867B; --crit-wash:#331D1A;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.9);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--terra); outline-offset: 2px; border-radius: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  .mast { background: var(--navy-deep); color:#F1ECE1; border-bottom: 3px solid var(--terra); }
+  .mast-in { max-width:1180px; margin:0 auto; padding:20px 20px 0; display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start; justify-content:space-between; }
+  .wordmark { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .wordmark h1 { font-family:var(--cond); font-weight:700; font-size:30px; letter-spacing:-.01em; margin:0; color:#F5F1E8; }
+  .wordmark .firm { font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:#8FA2BC; }
+  .mast-meta { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+  .nextmeet { font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#8FA2BC; }
+  .nextmeet b { color:#F1ECE1; font-weight:600; }
+  #whoami { display:block; margin-top:4px; color:#8FA2BC; text-transform:none; letter-spacing:.04em; }
+  #whoami b { color:#E0805B; font-weight:600; }
+  .refresh-pod { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.12); border-radius:3px; padding:7px 8px 7px 12px; }
+  .refresh-pod .rtxt { font-family:var(--mono); font-size:11px; line-height:1.35; color:#C3CEDD; text-align:right; }
+  .refresh-pod .rtxt b { display:block; color:#F1ECE1; font-weight:500; }
+  .btn-refresh { background:var(--terra); color:#fff; border:0; border-radius:2px; padding:7px 13px; font-family:var(--cond); font-weight:600; font-size:13px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+  .btn-refresh:hover:not(:disabled) { background: var(--terra-lift); }
+  .btn-refresh:disabled { background: rgba(255,255,255,.14); color:#92A3BA; cursor: default; }
+
+  .tabs { max-width:1180px; margin:0 auto; padding:16px 20px 0; display:flex; gap:2px; overflow-x:auto; }
+  .tab { background:transparent; border:0; border-bottom:3px solid transparent; color:#92A3BA; padding:9px 13px 10px; cursor:pointer; white-space:nowrap; font-family:var(--cond); font-weight:600; font-size:13.5px; letter-spacing:.05em; text-transform:uppercase; margin-bottom:-3px; }
+  .tab:hover { color:#D7DEE8; }
+  .tab[aria-selected="true"] { color:#FFF; border-bottom-color: var(--terra); }
+  .tab .ct { font-family:var(--mono); font-size:10px; opacity:.7; margin-left:5px; }
+  .tab .n { font-family:var(--mono); font-size:10px; opacity:.6; margin-right:6px; }
+
+  .wrap { max-width:1180px; margin:0 auto; padding-inline:20px; padding-block:28px 64px; }
+  .banner { border:1px solid var(--line); background:var(--warn-wash); color:var(--warn); border-left:3px solid var(--warn); border-radius:2px; padding:11px 14px; margin-bottom:22px; font-size:13.5px; }
+
+  .section-hd { display:flex; flex-wrap:wrap; gap:8px 20px; align-items:baseline; margin-bottom:6px; }
+  .section-hd .hdnum { font-family:var(--mono); font-size:13px; color:var(--terra); }
+  .section-hd h2 { font-family:var(--cond); font-weight:700; font-size:25px; margin:0; }
+  .section-hd .seg-time { font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+  .section-sub { color:var(--muted); font-size:13.5px; margin:0 0 22px; max-width:60ch; font-style:italic; padding-bottom:16px; border-bottom:1px solid var(--line); }
+
+  /* run of show index */
+  .agenda { border-top:1px solid var(--line); }
+  .arow {
+    display:grid; grid-template-columns:46px 1fr auto; gap:0 16px; align-items:start;
+    width:100%; text-align:left; background:transparent; border:0; border-bottom:1px solid var(--line-soft);
+    padding:18px 4px; cursor:pointer;
+  }
+  .arow:hover { background: var(--cream); }
+  .arow .anum { font-family:var(--mono); font-size:13px; color:var(--terra); padding-top:2px; }
+  .arow h3 { font-family:var(--cond); font-weight:700; font-size:19px; margin:0 0 3px; display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; }
+  .arow h3 .seg-time { font-family:var(--mono); font-size:10.5px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; font-weight:400; }
+  .arow p { margin:0; color:var(--muted); font-size:13.5px; max-width:62ch; }
+  .arow .peek { margin:8px 0 0; padding-left:0; list-style:none; }
+  .arow .peek li { position:relative; padding-left:14px; font-size:13px; color:var(--ink-2); margin-bottom:4px; }
+  .arow .peek li::before { content:""; position:absolute; left:2px; top:.6em; width:4px; height:4px; border-radius:50%; background:var(--terra); }
+  .acount { font-family:var(--mono); font-size:11px; color:var(--muted); white-space:nowrap; padding-top:5px; letter-spacing:.04em; }
+  .acount b { color:var(--terra); font-weight:600; }
+
+  .item { display:flex; gap:11px; align-items:flex-start; background:var(--card); border:1px solid var(--line-soft); border-radius:3px; padding:11px 13px; box-shadow:var(--shadow); }
+  .item + .item { margin-top:8px; }
+  .item.is-done { background:transparent; box-shadow:none; border-style:dashed; }
+  .item.is-done .item-text { color:var(--muted); text-decoration:line-through; }
+  .tick { flex:none; width:17px; height:17px; margin-top:2px; cursor:pointer; border:1.5px solid var(--muted); border-radius:2px; background:transparent; display:grid; place-items:center; padding:0; }
+  .tick:hover { border-color: var(--terra); }
+  .tick[aria-pressed="true"] { background:var(--good); border-color:var(--good); }
+  .tick svg { display:block; opacity:0; }
+  .tick[aria-pressed="true"] svg { opacity:1; }
+  .item-main { flex:1 1 auto; min-width:0; }
+  .item-text { margin:0; overflow-wrap:anywhere; }
+  .item-meta { display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:5px; font-family:var(--mono); font-size:10.5px; color:var(--muted); letter-spacing:.03em; }
+  .item-kill { flex:none; background:transparent; border:0; color:var(--muted); cursor:pointer; font-size:17px; line-height:1; padding:2px 4px; border-radius:2px; }
+  .item-kill:hover { color:var(--crit); background:var(--crit-wash); }
+
+  .empty { color:var(--muted); font-size:13.5px; padding:6px 0 2px; font-style:italic; }
+  .covered-toggle { display:block; background:transparent; border:0; padding:10px 0 4px; cursor:pointer; font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .covered-toggle:hover { color: var(--terra); }
+
+  .qadd { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  .qadd input[type="text"] { flex:1 1 200px; min-width:0; padding:9px 11px; border:1px solid var(--line); border-radius:3px; background:var(--card); }
+  .qadd input[type="text"]::placeholder { color: var(--muted); }
+  .qadd select, .qadd input[type="date"] { padding:9px; border:1px solid var(--line); border-radius:3px; background:var(--card); font-family:var(--mono); font-size:12px; }
+  .btn { background:var(--navy); color:#F1ECE1; border:0; border-radius:3px; padding:9px 16px; cursor:pointer; font-family:var(--cond); font-weight:600; font-size:13.5px; letter-spacing:.04em; text-transform:uppercase; }
+  .btn:hover { background: var(--navy-soft); }
+  .btn.ghost { background:transparent; color:var(--ink-2); border:1px solid var(--line); }
+  .btn.ghost:hover { background:var(--cream); color:var(--ink); }
+
+  .pill { display:inline-block; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; padding:3px 7px; border-radius:2px; white-space:nowrap; }
+  .pill.active{background:var(--good-wash);color:var(--good)} .pill.winding{background:var(--warn-wash);color:var(--warn)}
+  .pill.prospect{background:var(--terra-wash);color:var(--terra)} .pill.paused{background:var(--cream);color:var(--muted)}
+  .pill.out{background:var(--terra-wash);color:var(--terra)} .pill.drafting{background:var(--cream);color:var(--ink-2)}
+  .pill.verbal{background:var(--warn-wash);color:var(--warn)} .pill.won{background:var(--good-wash);color:var(--good)}
+  .pill.lost{background:var(--crit-wash);color:var(--crit)}
+
+  .subhd { font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:34px 0 12px; padding-bottom:7px; border-bottom:1px solid var(--line); }
+  .subhd:first-child { margin-top: 0; }
+
+  .clients { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px,1fr)); gap:16px; align-items:start; }
+  .ccard { background:var(--card); border:1px solid var(--line-soft); border-radius:3px; box-shadow:var(--shadow); overflow:hidden; }
+  .ccard-top { padding:14px 16px 12px; border-bottom:1px solid var(--line-soft); display:flex; gap:10px; align-items:flex-start; justify-content:space-between; }
+  .ccard-top h3 { font-family:var(--cond); font-weight:700; font-size:17px; margin:0 0 3px; }
+  .ccard-lead { font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .ccard-body { padding:14px 16px 16px; }
+  .pulse { margin:0; padding:12px 16px; background:var(--terra-wash); color:var(--ink); font-size:14px; border-bottom:1px solid var(--line-soft); }
+  .cnotes { border-top:1px dashed var(--line); padding-top:12px; margin-top:14px; }
+  .cnotes .item { box-shadow:none; background:var(--paper); }
+  .cnotes .qadd { margin-top:10px; }
+  .cnotes .qadd input[type="text"] { flex:1 1 140px; padding:7px 10px; font-size:13.5px; }
+  .cnotes .qadd .btn { padding:7px 12px; font-size:12.5px; }
+  .rlabel { font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .recap-list { margin:0; padding-left:0; list-style:none; }
+  .recap-list li { position:relative; padding-left:15px; margin-bottom:7px; font-size:13.5px; color:var(--ink-2); overflow-wrap:anywhere; }
+  .recap-list li::before { content:""; position:absolute; left:2px; top:.62em; width:5px; height:5px; border-radius:50%; background:var(--terra); }
+  .recap-list li:last-child { margin-bottom:0; }
+  .recap.blank { font-style:italic; color:var(--muted); font-size:13.5px; margin:0; }
+  .nextact { border-top:1px dashed var(--line); padding-top:12px; margin-top:14px; }
+  .nextact textarea { width:100%; border:1px solid var(--line); border-radius:3px; background:var(--paper); padding:8px 10px; resize:vertical; min-height:52px; font-size:13.5px; }
+
+  .group { margin-bottom:38px; }
+  .group-hd { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid var(--terra); }
+  .group-hd h3 { font-family:var(--cond); font-weight:700; font-size:18px; margin:0; }
+  .group-hd p { margin:0; color:var(--muted); font-size:13px; }
+
+  .tablewrap { overflow-x:auto; border:1px solid var(--line-soft); border-radius:3px; background:var(--card); box-shadow:var(--shadow); }
+  table { border-collapse:collapse; width:100%; min-width:680px; }
+  th { font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); text-align:left; font-weight:500; padding:11px 14px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  td { padding:12px 14px; border-bottom:1px solid var(--line-soft); vertical-align:top; font-size:14px; }
+  tr:last-child td { border-bottom:0; }
+  td.num { font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--ink-2); }
+  td .cname { font-weight:600; display:block; }
+  td .ctitle { color:var(--ink-2); font-size:13px; }
+  td select { background:transparent; border:1px solid var(--line); border-radius:2px; padding:4px 6px; font-family:var(--mono); font-size:11px; }
+  td input.inline { width:100%; min-width:140px; background:transparent; border:0; border-bottom:1px dashed var(--line); padding:3px 0; font-size:13.5px; }
+  td input.inline:focus { border-bottom-color:var(--terra); outline:none; }
+
+  .parklot { margin-top:40px; padding-top:4px; border-top:2px solid var(--terra); }
+  .parklot .subhd { margin-top:18px; color:var(--terra); }
+  .parklot-note { margin:0 0 16px; color:var(--muted); font-size:13.5px; font-style:italic; max-width:62ch; }
+  .month { margin-bottom:26px; }
+  .month h3 { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--terra); margin:0 0 10px; padding-bottom:7px; border-bottom:1px solid var(--line); }
+
+  @media (max-width: 620px) {
+    .mast-meta { align-items:flex-start; }
+    .mast-in { flex-direction:column; }
+    .wordmark h1 { font-size:26px; }
+    .arow { grid-template-columns:32px 1fr; }
+    .acount { grid-column:2; padding-top:8px; }
+  }
+</style>
+
+<header class="mast">
+  <div class="mast-in">
+    <div class="wordmark">
+      <h1>Base Camp</h1>
+      <span class="firm">Plan&nbsp;+&nbsp;Pivot Collective</span>
+    </div>
+    <div class="mast-meta">
+      <div class="nextmeet">Touch base &middot; <b id="meetDate">&mdash;</b><span id="whoami"></span></div>
+      <div class="refresh-pod">
+        <div class="rtxt" id="refreshTxt"><b>Recaps</b>never refreshed</div>
+        <button class="btn-refresh" id="refreshBtn" type="button">Refresh recaps</button>
+      </div>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Base Camp sections" id="tabbar"></nav>
+</header>
+
+<main class="wrap">
+  <div class="banner" id="banner" hidden></div>
+  <div id="stage"></div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var SECTIONS = [
+    { key:"swallow", num:"01", name:"Let It Out or Sweat It Out", tab:"Let It Out", time:"5 min",
+      note:"Did you swallow something this week you should have said out loud? Not like that, pervert." },
+    { key:"clients", num:"02", name:"Client Review", tab:"Clients", time:"",
+      note:"Tick through every active client. Say the thing even if it's fine." },
+    { key:"scopes", num:"03", name:"Prospective Clients", tab:"Prospects", time:"",
+      note:"What's quoted, who's warm, who got away and might not have to stay away." },
+    { key:"socials", num:"04", name:"Socials", tab:"Socials", time:"",
+      note:"What went out, what landed, what's queued. Two posts a week is the standing commitment." },
+    { key:"financials", num:"05", name:"Financials", tab:"Financials", time:"",
+      note:"Invoiced, collected, outstanding. What's owed to us and what we owe." },
+    { key:"catchall", num:"06", name:"Catch-All", tab:"Catch-All", time:"",
+      note:"Miscellaneous. Everything that didn't have a home." }
+  ];
+  var SECTION_BY_KEY = {};
+  SECTIONS.forEach(function (s) { SECTION_BY_KEY[s.key] = s; });
+
+  var SCOPE_STATUS = ["drafting","out","verbal","won","lost"];
+  var CLIENT_ORDER = { active:0, winding:1, prospect:2, paused:3 };
+
+  // Point-in-time snapshot of the shared data, used only when the live
+  // database returns nothing, so the page never renders empty.
+  var SEED = {"clients":[{"id":"buxton-inn","lead":"","name":"Buxton Inn","nextAction":"","pulse":"Going back and forth on the Distinctive Supply order. Invoice went out Sep 16, payment landed, most of it ships today. Now we're stuck on backordered brackets and whether to pay $126 to air the rest.","recap":"","recapBullets":["No meetings on the calendar in this window. All of it ran over email.","Julie sent the purchase request to Dora at Distinctive Supply Sep 15, the account was set up Sep 16, payment landed and most of the order ships Sep 18.","DECISION PENDING: brackets are the holdup. Only one case of double brackets is in stock, the rest are backordered, and UPS Next Day Air is quoted at $126.66 on top.","The Apotheke order had a voided shipping label Sep 17, reissued the same day, new tracking 1Z1372KR0334852112.","You invoiced the Buxton Inn Sep 16, attention Kevin Showe, copy Blake Kuhn, set up for credit card with the surcharge passed through."],"recapPeriod":"Sep 4 to Sep 18","recapUpdatedAt":"2026-09-18T14:20:00.000Z","status":"active","tickedOn":null},{"id":"choobies","lead":"Carolyn","name":"Choobies","nextAction":"Air into Louisville vs final-mile delivery, and the CPC pending the Intertek retest.","pulse":"New hourly scope signed and DocuSigned. Zach is now pushing back on the cost of the pre-shipment inspection, and that needs an answer before Monday or the Sep 21 slot is gone.","recap":"","recapBullets":["Met: Choobies weekly TB Sep 10, Choobies TB Sep 11, working session Sep 17.","Scope 3.1 closed. Zach turned down the retainer so Julie rebuilt it hourly at $350 scheduled and $400 unscheduled, combined and not doubled when you are both on. He questioned the rate, Julie answered it flat, he said ready to execute Sep 14, DocuSign went Sep 15.","Freight landed on you. Julie handed over the ECU quotes Sep 14 with the note that the nine quotes were not comparable and all expired that day.","Thirteen boxes arrived at Zach's Sep 15 and he is filling the inventory room.","DUE IN DAYS: Julie is trying to book an in-line pre-shipment inspection at Advan for Sep 21 or 22 through Intertek (handed from Hotter Wei to Beryl Zhou). Zach pushed back Sep 18 wanting cost and options first, and pointedly noted he skipped it originally on our advice.","Zach submitted the Safer Products registration Sep 17. The account is not live until CPSC reviews it."],"recapPeriod":"Sep 4 to Sep 18","recapUpdatedAt":"2026-09-18T14:20:00.000Z","status":"active","tickedOn":null},{"id":"cricket","lead":"","name":"Cricket","nextAction":"Wind-down: agree what the finite hourly support actually covers, in writing.","pulse":"Marked winding down, running at full speed. Six open threads, Julie waiting on Cricket for box sizes and keychain specs, and the factories shut Sep 25 for Mid-Autumn.","recap":"","recapBullets":["Met: cricket Sep 15.","Marked winding down, running at full engagement volume. This is the busiest thread in the inbox.","Julie ran the GMA financials Sep 18 at 2,000 units per kit: It's Sugar at the 7% invoice structure against the ABC revenue share plus RappAround's 10% commission.","Keychains: four options priced at 2,000 units. Julie told Nancy Sep 18 to hold everything because Cricket has still not chosen material or size.","Blocked on the client: final box sizes for the Original 4 kits went out Sep 16, Julie chased Sep 18, and she cannot go to Volkan until Cricket and Katie answer.","Also open: fingerpaint kit reformulation, cups and stirrers (Elva cannot quote without stated goals), and the Reno delivery on AWB 501-20328792 which you confirmed received Sep 4.","DUE: suppliers close for Mid-Autumn Festival Sep 25 to 27 and again Oct 1 to 8. Anything needing a factory answer has to land before Sep 25."],"recapPeriod":"Sep 4 to Sep 18","recapUpdatedAt":"2026-09-18T14:20:00.000Z","status":"winding","tickedOn":null},{"id":"drr-museum-store","lead":"Carolyn","name":"DRR Museum Store (State Dept)","nextAction":"Vendor delivery window Oct 1-5, store opens end of October. Audit the Ariba Vendor Master against the OK to Buy list.","pulse":"Sally is paying down Priority 1 and has asked us twice for the rest of the invoices. Faire flagged the account Wednesday. Delivery window opens Oct 1 and the print shop payment has a two-day squeeze.","recap":"","recapBullets":["Met: Transact Faire Wholesale Orders Sep 8, DRR purchasing call with Sally and Virginia Sep 14.","Cash is the constraint. You sent Priorities and Path Forward Sep 15 and Virginia Hart answered the same day: roughly $17K on the purchasing card, another $50K being opened, $150K targeted between Sep 15 and Sep 28, and explicitly no longer rushing.","Sally has been clearing Priority 1 through the week: Rowe Pottery, WS Game Company SO42291, Philadelphia Print Shop WN1999, Christopher Spitzmiller.","OPEN ON US: Sally has now asked twice for the remaining Priority 1 invoices, Rifle Paper Co. at $2,100 named specifically. That is the ball sitting in our court.","RISK: Faire flagged a problem with the account Sep 17 and Julie is still pulling detail out of support. Eight DRR vendors run through Faire.","DUE: Philadelphia Print Shop needs payment by Sep 30 to ship Oct 2, and the card funds do not close until Sep 28. Vendor delivery window is Oct 1 to Oct 5 and the store opens end of October.","Julie opened four new pen vendors Sep 18: Karas, Edison, Fisher Space Pen, Tactile Turn."],"recapPeriod":"Sep 4 to Sep 18","recapUpdatedAt":"2026-09-18T14:20:00.000Z","status":"active","tickedOn":null},{"id":"idear","lead":"","name":"IDEAR / Paul Fino","nextAction":"","pulse":"Chrissy wants a standing check-in and we sent times Sep 16 that haven't come back yet. Paul's first fragrance samples are out with the full brand team.","recap":"","recapBullets":["Met: IDEAR + P+P costing TB Sep 10, IDEAR quick connect Sep 16, internal Paul Fino session on financial plans and unit costs Sep 8.","Chrissy asked for the quick connect the same morning she wanted it. Agenda was project pathing next steps and setting an ongoing check-in cadence.","COMING UP: you proposed biweekly standup times Sep 16 for Sep 22 and Sep 23. Not confirmed back yet.","Chrissy sent the Sniff Sesh questionnaire Sep 16 to the full brand team (IPG, Custom Essence, Townhouse, Nightingale) as Paul's first round of fragrance samples went out."],"recapPeriod":"Sep 4 to Sep 18","recapUpdatedAt":"2026-09-18T14:20:00.000Z","status":"active","tickedOn":null},{"id":"sabal-swim","lead":"Carolyn","name":"Sabal Swim","nextAction":"Preston asked whether we do pricing strategy. Scope it before the interest cools.","pulse":"A few emails back and forth on the buy. Preston's CFO is questioning the 150 percent growth assumption, we answered Tuesday, and it's been quiet since. Pricing work is sitting right there unscoped.","recap":"","recapBullets":["Met: Reorder review Sep 4, with Preston sharing the Otter notes after.","Preston caught that the summary totals were not recalculating Sep 9. You fixed and explained it the same day.","Large in the Hampton went back into the order after Hartley pushed, on the evidence that it was the only size in the line that sold out.","WATCH: Sep 15 Preston said he and his CFO are questioning whether planning to 150% growth is right given cash flow. You answered Sep 16 that the forecast comes from their own sales history and the growth target set together, with no consumer spending overlay. No reply since.","Preston left a review Sep 14 and said in writing that pricing is the next engagement.","COMING UP: the pricing scope. Granola has us owing a menu of project services with pricing, covering retail pricing strategy, cost and margin analysis, and below-the-line opportunities. Not sent."],"recapPeriod":"Sep 4 to Sep 18","recapUpdatedAt":"2026-09-18T14:20:00.000Z","status":"active","tickedOn":null},{"id":"splat-lab","lead":"Julie + Adrian","name":"Splat Lab","nextAction":"Decide whether the post-Milestone-2 import coaching gets scoped and billed, or gets a stop date.","pulse":"eFiling finally done Sep 14 so freight can move. Still doing unpaid import coaching five weeks after the engagement closed at Milestone 2.","recap":"","recapBullets":["No meetings on the calendar in this window. All of it ran over email with Taylor Vecchio.","UNBLOCKED: the CPSC eFiling account was the thing holding up freight. Adrian sent the setup steps Sep 3 and chased Sep 5. Taylor got it done a different way and confirmed Sep 14. Freight can now be organized.","Julie told Taylor Sep 16 to skip the customs bond form: it is optional, and for a single shipment the no-paperwork bond option is the right one.","Taylor is learning importing in real time and asked broader questions, since she is bringing in supplies for her other programs too. Julie walked her through DDP versus FOB and where the cost actually sits.","FLAG: Adrian noted many Splat Lab kit components classify as chemicals, so a US-based freight forwarder is the call for this first shipment. That constrains who can handle it.","Worth naming at the touch base: this engagement formally wrapped at Milestone 2 on Aug 25 and has been running on unpaid goodwill ever since. It is a tripwire case."],"recapPeriod":"Sep 4 to Sep 18","recapUpdatedAt":"2026-09-18T15:30:00.000Z","status":"active","tickedOn":null},{"id":"wellow","lead":"Julie + Carolyn","name":"Wellow","nextAction":"Thai Sock / PackYak: confirm the three Heart Healthy releases land as planned.","pulse":"Contract extension signed, except Julie thinks we signed the wrong version and nobody has sorted that out. Three Thai Sock lots moving, Lot 1 lands Sep 23, and both Dongjing POs go sea on the 25th.","recap":"","recapBullets":["Met: Monday Morning Meeting Sep 8, Plan Pivot/Sean Sep 9 and Sep 15, Pablo weekly Sep 11, Product Business Review Sep 7 and Sep 14, Purchasing Touchbase and Summer 2027 Direction both Sep 14.","Contract extension signed. Sean sent the agreement Sep 10, you signed and returned Sep 15. Julie thinks it is the wrong version (the one with the AI restriction language); she had already signed an updated one from Megan. Still unresolved.","Thai Sock: Lot 1 loaded Sep 14 with draft AWB. Lots 2 and 3 confirmed Sep 16, Lot 2 at 9,480 pairs in 92 cartons and Lot 3 at 12,000 pairs in 115 cartons.","DUE: Lot 1 lands Sep 23. You sent the signed power of attorney and EIN Sep 17 so TRK can file the entry in time. Lot 2 loads Sep 22. Lot 3 flight schedule still not issued.","Dongjing: Sean asked to move from air to sea, you priced four options, and POs R12.1 and 29.1 now ship fast sea together Sep 25.","Julie sent the open-order reconciliation (Untangling Wellow Receipts) Sep 17 and you are loading it into the dashboard. She built it by hand, so it is worth deciding whether that becomes automated."],"recapPeriod":"Sep 4 to Sep 18","recapUpdatedAt":"2026-09-18T14:20:00.000Z","status":"active","tickedOn":null}],"prospects":[{"category":"unclosed","detail":"RFQ 86615426Q00017 submitted Jul 23. Would have required hiring to deliver.","id":"n-hud","lastTouch":"2026-07-23","name":"HUD contracting","nextStep":"Check the award status, and decide whether federal marketing RFQs are a lane we want","org":"U.S. Dept of Housing and Urban Development","owner":null,"status":null,"value":null},{"category":"unclosed","detail":"Merchandising concept direction deck sent Aug 11 after a Granola-noted discovery call. They reviewed proposals through Aug 18, then passed Aug 24: decided to go in a different direction. You and Julie replied warmly and left the door open.","id":"n-lovestruck","lastTouch":"2026-08-24","name":"Rachel / Marley Chase","nextStep":"Lost on merit, not on silence. Worth a check-in in Q1 to see how the other direction went","org":"Lovestruck Books","owner":null,"status":null,"value":null},{"category":"unclosed","detail":"Met Aug 13, proposal sent the same day, followed up Aug 18. She replied Sep 3: apologized for going quiet, hit her first $10K month in August, asked to circle back in December. Sometimes remembered as Posie.","id":"n-megan-trudie","lastTouch":"2026-09-04","name":"Megan","nextStep":"She named December herself. Reminder parked for Nov 30","org":"Trudie (quilted homewares)","owner":null,"status":null,"value":null},{"category":"unclosed","detail":"Mahjong sourcing proposal out since Jul 23. Follow-ups Jul 28, Aug 4 and Aug 18, including two warm non-sales notes. No answer to any of them.","id":"n-morgan-kirchner","lastTouch":"2026-08-18","name":"Morgan Kirchner","nextStep":"One more warm note with a real reason, then let it go","org":"Three Daughters Co.","owner":null,"status":null,"value":null},{"category":"scope","detail":"Three-phase merchandising engagement: intro packet and starting scope","id":"p-clearwater","lastTouch":"2026-09-17","name":"Ella Rouelle","nextStep":"Follow up if it is quiet by Sep 26","org":"Clearwater Mercantile","owner":null,"status":"out","value":"$45K / $90K / $20K+ mo"},{"category":"scope","detail":"RFQ 86615426Q00017, Marketing Support Services for HUD Housing Surveys","id":"p-hud","lastTouch":"2026-07-23","name":"Diaz / Gist","nextStep":"No award notice in eight weeks. Check status, and decide if we would even staff it","org":"HUD","owner":null,"status":"out","value":"quoted"},{"category":"scope","detail":"Pricing strategy, plus a menu of project services","id":"p-sabal-pricing","lastTouch":"2026-09-16","name":"Preston Lynn","nextStep":"Send the services menu: retail pricing, cost and margin, below the line","org":"Sabal Swim","owner":null,"status":"drafting","value":"TBD"},{"category":"scope","detail":"Mahjong sourcing, 4 to 6 weeks, three vetted finalists","id":"p-three-daughters","lastTouch":"2026-08-18","name":"Morgan Kirchner","nextStep":"Three follow-ups out with no reply. Decide: one more, or move to never closed","org":"Three Daughters Co.","owner":null,"status":"out","value":"not disclosed"},{"category":"warm","detail":"Stayed in touch all year unprompted, offers referrals and intros, asked if you would be at High Point. Said the assortment work is a 2027 or 2028 push.","id":"w-andrew-shibata","lastTouch":"2026-08-21","name":"Andrew Shibata","nextStep":"High Point, and pin down whether the 2027 push has a real date","org":"Jeffan (came through Jola USA)","owner":null,"status":null,"value":null},{"category":"warm","detail":"Brought P&P into Paul Fino / IDEAR. She is a referral source, not only a collaborator.","id":"w-chrissy-montera","lastTouch":"2026-09-16","name":"Chrissy Montera","nextStep":"Already active on IDEAR. Ask what else is in her book","org":"Miss C-Suite","owner":null,"status":null,"value":null},{"category":"warm","detail":"Engagement closed Jul 30 with a final close and dashboard walkthrough. Runs the store setup side herself, so she knows what the tool is worth.","id":"w-elisa-70deg","lastTouch":"2026-07-30","name":"Alisa Durando","nextStep":"Seven weeks quiet. Check in on how the dashboard is actually being used","org":"70 Degrees Life","owner":null,"status":null,"value":null},{"category":"warm","detail":"Pro Shop inventory and sales reset closed Apr 2026. Said she would come back with details on the new location. New HQ has a Trader Joe's next door and a PT patient base walking through daily.","id":"w-lauren-ganim","lastTouch":"2026-06-04","name":"Lauren Ganim","nextStep":"Ask how the new HQ build landed. Three months quiet.","org":"Chalkd Apparel","owner":null,"status":null,"value":null},{"category":"warm","detail":"Came to P&P for help on her deck in June, took the input, was invoiced. Small engagement but she sought you out.","id":"w-lauren-mazzei","lastTouch":"2026-06-03","name":"Lauren Mazzei","nextStep":"Julie asked how the terms shook out and never got an answer. Ask again as a human","org":"Past Midnight","owner":null,"status":null,"value":null},{"category":"warm","detail":"2027 restock buy delivered. Left a public review Sep 14 and said in writing that pricing is next.","id":"w-preston-hartley","lastTouch":"2026-09-16","name":"Preston Lynn & Hartley","nextStep":"Warm and active. Convert the pricing interest before the CFO conversation cools it","org":"Sabal Swim","owner":null,"status":null,"value":null},{"category":"warm","detail":"The agency that took a chance on P&P in January and brought the Jeffan work. Wrapped April. Julie introduced her to Chrissy Montera in June.","id":"w-shelia-butler","lastTouch":"2026-06-18","name":"Shelia Butler","nextStep":"Nothing since the last invoice in June. Overdue for a real check-in, not an invoice","org":"Jola USA","owner":null,"status":null,"value":null}],"agenda":[{"addedAt":"2026-09-18T12:00:00.000Z","addedBy":null,"doneAt":null,"id":"seed-holiday-replen","section":"clients","status":"open","surfaceOn":"2026-10-26","text":"Before the holidays: DRR replen plan for the November and December event weeks."},{"addedAt":"2026-09-18T12:00:00.000Z","addedBy":null,"doneAt":null,"id":"seed-smithsonian","section":"scopes","status":"open","surfaceOn":null,"text":"Smithsonian Enterprises: next move on Ray Moore, SVP Retail. Museum store as a named category, not a one-off."},{"addedAt":"2026-09-18T12:00:00.000Z","addedBy":null,"doneAt":null,"id":"seed-tripwires","section":"catchall","status":"open","surfaceOn":null,"text":"Walk through the client tripwire list and pick ONE to run for a month. Vote: the change-order line."},{"addedAt":"2026-09-18T15:00:00.000Z","addedBy":null,"doneAt":null,"id":"seed-trudie-december","section":"scopes","status":"open","surfaceOn":"2026-11-30","text":"Circle back to Megan at Trudie. She asked for December, after her busiest season."},{"addedAt":"2026-09-18T12:00:00.000Z","addedBy":null,"doneAt":null,"id":"seed-wellow-trueup","section":"clients","status":"open","surfaceOn":"2026-10-12","text":"Wellow hours true-up now that the contract tripled. Are we actually billing what we're working?"}]};
+  var usingSeed = false;
+  var db = null, user = null, canWrite = true;
+  var state = { agenda:[], clients:[], prospects:[], refresh:null };
+  var profiles = {};
+  var showCovered = {};
+  var view = "run";
+
+  function el(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function uid() {
+    try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+    return "id" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  }
+  function todayISO() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  }
+  function fmtDate(iso) {
+    if (!iso) return "";
+    var p = String(iso).slice(0,10).split("-");
+    if (p.length !== 3) return iso;
+    return new Date(Number(p[0]), Number(p[1])-1, Number(p[2]))
+      .toLocaleDateString(undefined, { month:"short", day:"numeric" });
+  }
+  function fmtStamp(ts) {
+    if (!ts) return null;
+    var d = new Date(ts);
+    if (isNaN(d)) return null;
+    return d.toLocaleDateString(undefined, { month:"short", day:"numeric" }) + ", " +
+           d.toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" });
+  }
+  function nextTouchBase() {
+    var d = new Date();
+    d.setDate(d.getDate() + ((8 - d.getDay()) % 7));
+    return d.toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric" });
+  }
+  function who(id) { var p = profiles[id]; return (p && p.name) || ""; }
+  function banner(msg) {
+    var b = el("banner");
+    if (!msg) { b.hidden = true; return; }
+    var isNew = b.hidden || b.textContent !== msg;
+    b.textContent = msg; b.hidden = false;
+    if (isNew) { try { b.scrollIntoView({ block: "nearest" }); } catch (e) {} }
+  }
+  var NO_DB_MSG = "Base Camp hasn't connected to its shared data, so nothing you type here will save yet. Reload the page and give it a few seconds.";
+  function guard(p, label) {
+    return Promise.resolve(p).catch(function (e) {
+      var code = e && e.code;
+      if (code === "invalid_argument") {
+        canWrite = false;
+        banner("You're signed in as a viewer here, so Base Camp is read-only for you. Ask Carolyn to bump your access to “Can interact” and everything unlocks.");
+      } else if (code === "revoked" || code === "not_granted") {
+        banner("Base Camp lost its connection to the shared data. Reload the page to pick it back up.");
+      } else {
+        banner("Couldn't save that (" + (code || "unknown") + "). Your last change may not have stuck.");
+      }
+      console.warn("Base Camp " + label + " failed", e);
+    });
+  }
+
+  function dueNow(it) { return it.status !== "dropped" && (!it.surfaceOn || it.surfaceOn <= todayISO()); }
+  // Items tagged to a client render on that client's card, not in the flat
+  // section list, so the Client Review tab doesn't show them twice.
+  function openIn(key) {
+    return state.agenda.filter(function (it) {
+      return it.section === key && !it.client && dueNow(it) && it.status !== "done";
+    });
+  }
+  function doneIn(key) {
+    return state.agenda.filter(function (it) {
+      return it.section === key && !it.client && dueNow(it) && it.status === "done";
+    });
+  }
+
+  function itemHTML(it, opts) {
+    var done = it.status === "done", meta = [];
+    var adder = who(it.addedBy);
+    var added = it.addedAt ? fmtDate(it.addedAt.slice(0,10)) : "";
+    if (adder) meta.push("added by " + esc(adder) + (added ? " · " + esc(added) : ""));
+    else if (added) meta.push("added " + esc(added));
+    if (it.surfaceOn) meta.push("parked for " + esc(fmtDate(it.surfaceOn)));
+    if (opts && opts.showSection && SECTION_BY_KEY[it.section]) meta.push(esc(SECTION_BY_KEY[it.section].name));
+    if (done && it.doneAt) {
+      var closer = who(it.doneBy);
+      meta.push("covered " + (closer ? "by " + esc(closer) + " " : "") + esc(fmtDate(it.doneAt.slice(0,10))));
+    }
+    return '<div class="item' + (done ? " is-done" : "") + '">' +
+      '<button class="tick" type="button" data-act="toggle" data-id="' + esc(it.id) + '" aria-pressed="' + (done?"true":"false") +
+        '" aria-label="' + (done ? "Mark not covered" : "Mark covered") + '">' +
+        '<svg width="11" height="11" viewBox="0 0 11 11" aria-hidden="true"><path d="M1.5 5.6 4 8.2 9.5 2.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '</button><div class="item-main"><p class="item-text">' + esc(it.text) + '</p>' +
+      (meta.length ? '<div class="item-meta">' + meta.join("<span>&middot;</span>") + '</div>' : "") +
+      '</div><button class="item-kill" type="button" data-act="drop" data-id="' + esc(it.id) + '" aria-label="Remove" title="Remove">&times;</button></div>';
+  }
+
+  /* ---------- Run of Show: the index ---------- */
+  function renderRun() {
+    var rows = SECTIONS.map(function (s) {
+      var open = openIn(s.key), done = doneIn(s.key);
+      var extra = "";
+      if (s.key === "clients") {
+        var n = state.clients.filter(function (c) { return c.status === "active" || c.status === "winding"; }).length;
+        extra = n + " to tick through";
+      } else if (s.key === "scopes") {
+        var live = state.prospects.filter(function (p) {
+          return p.category === "scope" && ["drafting","out","verbal"].indexOf(p.status) >= 0;
+        }).length;
+        var warm = state.prospects.filter(function (p) { return p.category === "warm"; }).length;
+        extra = live + " out, " + warm + " warm";
+      }
+      var peek = open.slice(0,3).map(function (it) { return "<li>" + esc(it.text) + "</li>"; }).join("");
+      var count = open.length ? "<b>" + open.length + "</b> open" : (done.length ? done.length + " covered" : "nothing raised");
+
+      return '<button class="arow" type="button" data-go="' + s.key + '">' +
+        '<span class="anum">' + s.num + '</span>' +
+        '<span><h3>' + esc(s.name) + (s.time ? '<span class="seg-time">' + esc(s.time) + '</span>' : "") + '</h3>' +
+        '<p>' + esc(s.note) + '</p>' +
+        (peek ? '<ul class="peek">' + peek + (open.length > 3 ? "<li>and " + (open.length - 3) + " more</li>" : "") + "</ul>" : "") +
+        '</span>' +
+        '<span class="acount">' + count + (extra ? "<br>" + esc(extra) : "") + '</span>' +
+      '</button>';
+    }).join("");
+
+    return '<div class="section-hd"><h2>Run of Show</h2></div>' +
+      '<p class="section-sub">Top to bottom, in this order. Click any line to open that section and work it.</p>' +
+      '<div class="agenda">' + rows + '</div>';
+  }
+
+  /* ---------- a section tab ---------- */
+  function renderSection(key) {
+    var s = SECTION_BY_KEY[key];
+    var open = openIn(key), done = doneIn(key);
+    var html = '<div class="section-hd"><span class="hdnum">' + s.num + '</span><h2>' + esc(s.name) + '</h2>' +
+      (s.time ? '<span class="seg-time">' + esc(s.time) + '</span>' : "") + '</div>' +
+      '<p class="section-sub">' + esc(s.note) + '</p>';
+
+    if (key === "clients") html += clientPanel();
+    if (key === "scopes")  html += prospectPanel();
+
+    html += '<div class="subhd">' + (key === "clients" || key === "scopes" ? "Items raised for this section" : "On the agenda") + '</div>';
+    html += open.length ? open.map(function (it) { return itemHTML(it); }).join("") : '<p class="empty">Nothing raised yet.</p>';
+
+    if (done.length) {
+      html += '<button class="covered-toggle" type="button" data-act="covered" data-key="' + key + '">' +
+        (showCovered[key] ? "− hide" : "+ show") + " covered (" + done.length + ")</button>";
+      if (showCovered[key]) html += done.map(function (it) { return itemHTML(it); }).join("");
+    }
+
+    html += '<div class="qadd"><input type="text" id="add-' + key + '" placeholder="Add to ' + esc(s.name) + '…">' +
+      '<button class="btn ghost" type="button" data-act="add" data-key="' + key + '">Add</button></div>';
+    if (key === "catchall") html += renderLater();
+    return html;
+  }
+
+  function clientPanel() {
+    var list = state.clients.slice().sort(function (a,b) {
+      var ra = CLIENT_ORDER[a.status], rb = CLIENT_ORDER[b.status];
+      ra = (ra == null ? 9 : ra); rb = (rb == null ? 9 : rb);
+      return (ra - rb) || String(a.name).localeCompare(String(b.name));
+    });
+    if (!list.length) return '<p class="empty">No clients loaded yet.</p>';
+    return '<div class="clients">' + list.map(function (c) {
+      var bullets = Array.isArray(c.recapBullets) ? c.recapBullets : null, body;
+      if (bullets && bullets.length) {
+        body = '<ul class="recap-list">' + bullets.map(function (b) { return "<li>" + esc(b) + "</li>"; }).join("") + "</ul>";
+      } else if (c.recap) {
+        body = '<ul class="recap-list"><li>' + esc(c.recap) + "</li></ul>";
+      } else {
+        body = '<p class="recap blank">No recap yet. Hit Refresh recaps up top and it fills in from the inbox and calendar.</p>';
+      }
+
+      var notes = state.agenda.filter(function (it) {
+        return it.client === c.id && dueNow(it) && it.status !== "done";
+      });
+      var notesDone = state.agenda.filter(function (it) {
+        return it.client === c.id && dueNow(it) && it.status === "done";
+      });
+
+      return '<article class="ccard"><div class="ccard-top"><div>' +
+        '<h3>' + esc(c.name) + '</h3><div class="ccard-lead">' + (c.lead ? esc(c.lead) : "unassigned") + '</div></div>' +
+        '<span class="pill ' + esc(c.status) + '">' + esc(c.status) + '</span></div>' +
+
+        (c.pulse ? '<p class="pulse">' + esc(c.pulse) + '</p>' : "") +
+
+        '<div class="ccard-body"><div class="rlabel">Last 14 days' + (c.recapPeriod ? " &middot; " + esc(c.recapPeriod) : "") + '</div>' +
+        body +
+
+        '<div class="cnotes"><div class="rlabel">Our notes</div>' +
+        (notes.length ? notes.map(function (it) { return itemHTML(it); }).join("") : "") +
+        (notesDone.length ? notesDone.map(function (it) { return itemHTML(it); }).join("") : "") +
+        (!notes.length && !notesDone.length ? '<p class="empty">Nothing added yet.</p>' : "") +
+        '<div class="qadd"><input type="text" id="cadd-' + esc(c.id) + '" placeholder="Add a bullet for ' + esc(c.name) + '…">' +
+        '<button class="btn ghost" type="button" data-act="addclient" data-client="' + esc(c.id) + '">Add</button></div></div>' +
+
+        '<div class="nextact"><div class="rlabel">Next action</div>' +
+        '<textarea data-act="nextaction" data-id="' + esc(c.id) + '" placeholder="What has to happen before we talk again">' + esc(c.nextAction || "") + '</textarea></div>' +
+        '</div></article>';
+    }).join("") + '</div>';
+  }
+
+  function killCell(id) {
+    return '<td><button class="item-kill" type="button" data-act="pdrop" data-id="' + esc(id) + '" aria-label="Remove row">&times;</button></td>';
+  }
+  function inlineCell(id, field, val, ph) {
+    return '<td><input class="inline" type="text" data-act="pfield" data-id="' + esc(id) + '" data-field="' + field +
+      '" value="' + esc(val || "") + '" placeholder="' + esc(ph) + '"></td>';
+  }
+
+  function prospectPanel() {
+    var byCat = { scope:[], warm:[], unclosed:[] };
+    state.prospects.forEach(function (p) { if (byCat[p.category]) byCat[p.category].push(p); });
+    Object.keys(byCat).forEach(function (k) {
+      byCat[k].sort(function (a,b) { return String(b.lastTouch||"").localeCompare(String(a.lastTouch||"")); });
+    });
+
+    var scopeRows = byCat.scope.length ? byCat.scope.map(function (p) {
+      var opts = SCOPE_STATUS.map(function (st) {
+        return '<option value="' + st + '"' + (p.status === st ? " selected" : "") + ">" + st + "</option>";
+      }).join("");
+      return "<tr><td><span class=\"cname\">" + esc(p.org || p.name) + "</span><span class=\"ctitle\">" + esc(p.detail) + "</span></td>" +
+        '<td class="num">' + esc(p.value || "—") + "</td><td class=\"num\">" + esc(p.lastTouch ? fmtDate(p.lastTouch) : "—") + "</td>" +
+        '<td><select data-act="pstatus" data-id="' + esc(p.id) + '" aria-label="Status">' + opts + "</select></td>" +
+        inlineCell(p.id, "nextStep", p.nextStep, "what moves it") + killCell(p.id) + "</tr>";
+    }).join("") : '<tr><td colspan="6"><span class="empty">Nothing quoted right now.</span></td></tr>';
+
+    var warmRows = byCat.warm.length ? byCat.warm.map(function (p) {
+      return "<tr><td><span class=\"cname\">" + esc(p.name) + "</span><span class=\"ctitle\">" + esc(p.org||"") + "</span></td>" +
+        inlineCell(p.id, "detail", p.detail, "why they come back") +
+        '<td class="num">' + esc(p.lastTouch ? fmtDate(p.lastTouch) : "—") + "</td>" +
+        inlineCell(p.id, "nextStep", p.nextStep, "how we stay in touch") + killCell(p.id) + "</tr>";
+    }).join("") : '<tr><td colspan="5"><span class="empty">No warm clients logged yet.</span></td></tr>';
+
+    var coldRows = byCat.unclosed.length ? byCat.unclosed.map(function (p) {
+      return "<tr><td><span class=\"cname\">" + esc(p.name) + "</span><span class=\"ctitle\">" + esc(p.org||"") + "</span></td>" +
+        inlineCell(p.id, "detail", p.detail, "what happened") +
+        '<td class="num">' + esc(p.lastTouch ? fmtDate(p.lastTouch) : "—") + "</td>" +
+        inlineCell(p.id, "nextStep", p.nextStep, "reason to circle back") + killCell(p.id) + "</tr>";
+    }).join("") : '<tr><td colspan="5"><span class="empty">Nothing here yet.</span></td></tr>';
+
+    return '<div class="group"><div class="group-hd"><h3>Scopes Out</h3><p>Quoted and waiting. A scope with no next step dies quietly.</p></div>' +
+      '<div class="tablewrap"><table><thead><tr><th>Who &amp; what</th><th>Value</th><th>Sent</th><th>Status</th><th>Next step</th><th></th></tr></thead>' +
+      '<tbody>' + scopeRows + '</tbody></table></div>' +
+      '<div class="qadd"><input type="text" id="scOrg" placeholder="Company" style="flex:0 1 160px">' +
+      '<input type="text" id="scTitle" placeholder="What the scope is"><input type="text" id="scValue" placeholder="$" style="flex:0 1 110px">' +
+      '<button class="btn ghost" data-act="addscope" type="button">Add scope</button></div></div>' +
+
+      '<div class="group"><div class="group-hd"><h3>Warm Clients</h3><p>They will hire us again. The job is staying in touch like a person, not a pipeline.</p></div>' +
+      '<div class="tablewrap"><table><thead><tr><th>Who</th><th>Why they come back</th><th>Last touch</th><th>Next touch</th><th></th></tr></thead>' +
+      '<tbody>' + warmRows + '</tbody></table></div>' +
+      '<div class="qadd"><input type="text" id="wmName" placeholder="Name" style="flex:0 1 160px">' +
+      '<input type="text" id="wmOrg" placeholder="Company" style="flex:0 1 160px"><input type="text" id="wmDetail" placeholder="Why they come back">' +
+      '<button class="btn ghost" data-act="addwarm" type="button">Add</button></div></div>' +
+
+      '<div class="group"><div class="group-hd"><h3>Never Closed</h3><p>Went quiet or landed at the wrong time. Some of these are early, not dead.</p></div>' +
+      '<div class="tablewrap"><table><thead><tr><th>Who</th><th>What happened</th><th>Last touch</th><th>Worth circling back?</th><th></th></tr></thead>' +
+      '<tbody>' + coldRows + '</tbody></table></div>' +
+      '<div class="qadd"><input type="text" id="ncName" placeholder="Name" style="flex:0 1 160px">' +
+      '<input type="text" id="ncOrg" placeholder="Company" style="flex:0 1 160px"><input type="text" id="ncDetail" placeholder="What happened">' +
+      '<button class="btn ghost" data-act="addcold" type="button">Add</button></div></div>';
+  }
+
+  function renderLater() {
+    var today = todayISO();
+    var list = state.agenda.filter(function (it) {
+      return it.status === "open" && it.surfaceOn && it.surfaceOn > today;
+    }).sort(function (a,b) { return a.surfaceOn.localeCompare(b.surfaceOn); });
+
+    var body;
+    if (!list.length) {
+      body = '<p class="empty">Nothing parked. Anything you date below shows up here until its week comes around.</p>';
+    } else {
+      var groups = [], seen = {};
+      list.forEach(function (it) {
+        var k = it.surfaceOn.slice(0,7);
+        if (!seen[k]) { seen[k] = []; groups.push(k); }
+        seen[k].push(it);
+      });
+      body = groups.map(function (k) {
+        var p = k.split("-");
+        var label = new Date(Number(p[0]), Number(p[1])-1, 1).toLocaleDateString(undefined, { month:"long", year:"numeric" });
+        return '<div class="month"><h3>' + esc(label) + "</h3>" +
+          seen[k].map(function (it) { return itemHTML(it, { showSection:true }); }).join("") + "</div>";
+      }).join("");
+    }
+
+    var opts = SECTIONS.map(function (s) { return '<option value="' + s.key + '">' + esc(s.name) + "</option>"; }).join("");
+    return '<div class="parklot">' +
+      '<div class="subhd">Parking Lot &middot; Future Us Problems</div>' +
+      '<p class="parklot-note">Give it a date and forget it on purpose. It walks itself back onto the agenda the week it comes due, ' +
+      'which is Future Us’s problem and frankly she can handle it.</p>' +
+      body +
+      '<div class="qadd" style="margin-top:16px"><input type="text" id="ltText" placeholder="Something to raise down the road">' +
+      '<select id="ltSection">' + opts + '</select><input type="date" id="ltDate">' +
+      '<button class="btn" data-act="park" type="button">Park it</button></div></div>';
+  }
+
+  function renderRefresh() {
+    var r = state.refresh || {}, btn = el("refreshBtn"), txt = el("refreshTxt");
+    var pending = r.status === "requested" || r.status === "running";
+    if (pending) {
+      btn.disabled = true;
+      btn.textContent = r.status === "running" ? "Working…" : "Requested";
+      txt.innerHTML = "<b>Requested " + esc(fmtStamp(r.requestedAt) || "just now") + "</b>usually back within the hour";
+    } else {
+      btn.disabled = !canWrite;
+      btn.textContent = "Refresh recaps";
+      var last = fmtStamp(r.completedAt);
+      txt.innerHTML = last ? "<b>Recaps fresh as of</b>" + esc(last) : "<b>Recaps</b>never refreshed";
+    }
+  }
+
+  function renderTabs() {
+    var tabs = [{ key:"run", label:"Run of Show", num:"" }]
+      .concat(SECTIONS.map(function (s) { return { key:s.key, label:s.tab, num:s.num }; }));
+
+    el("tabbar").innerHTML = tabs.map(function (t) {
+      var ct = "";
+      if (t.key !== "run") {
+        ct = openIn(t.key).length || "";
+      }
+      return '<button class="tab" role="tab" data-view="' + t.key + '" aria-selected="' + (view === t.key ? "true" : "false") + '">' +
+        (t.num ? '<span class="n">' + t.num + "</span>" : "") + esc(t.label) +
+        (ct ? '<span class="ct">' + ct + "</span>" : "") + "</button>";
+    }).join("");
+  }
+
+  function fieldKey(f) {
+    if (f.id) return "#" + f.id;
+    if (f.dataset && f.dataset.act && f.dataset.id) {
+      return f.dataset.act + ":" + f.dataset.id + ":" + (f.dataset.field || "");
+    }
+    return null;
+  }
+
+  function renderStage() {
+    var stage = el("stage");
+
+    // Preserve what the user is mid-way through typing. A snapshot from the
+    // shared database re-renders this whole panel, and without this the text
+    // in an add box or a next-action field disappears as you type.
+    var scratch = {}, activeKey = null, caret = null;
+    Array.prototype.forEach.call(stage.querySelectorAll("input, textarea"), function (f) {
+      var k = fieldKey(f);
+      if (k && f.closest(".qadd")) scratch[k] = f.value;
+    });
+    var ae = document.activeElement;
+    if (ae && stage.contains(ae) && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) {
+      activeKey = fieldKey(ae);
+      if (activeKey) scratch[activeKey] = ae.value;
+      try { caret = ae.selectionStart; } catch (e) {}
+    }
+
+    if (SECTION_BY_KEY[view]) stage.innerHTML = renderSection(view);
+    else stage.innerHTML = renderRun();
+
+    Array.prototype.forEach.call(stage.querySelectorAll("input, textarea"), function (f) {
+      var k = fieldKey(f);
+      if (!k) return;
+      if (scratch[k] !== undefined && scratch[k] !== f.value) f.value = scratch[k];
+      if (k === activeKey) {
+        try { f.focus(); if (caret != null) f.setSelectionRange(caret, caret); } catch (e) {}
+      }
+    });
+  }
+
+  function withSeed(rows, coll) {
+    if (rows && rows.length) return rows;
+    if (SEED[coll] && SEED[coll].length) { usingSeed = true; return SEED[coll].slice(); }
+    return rows;
+  }
+  function applySeed() {
+    usingSeed = true;
+    if (!state.clients.length)   state.clients   = SEED.clients.slice();
+    if (!state.prospects.length) state.prospects = SEED.prospects.slice();
+    if (!state.agenda.length)    state.agenda    = SEED.agenda.slice();
+    renderAll();
+  }
+
+  function renderAll() { renderTabs(); renderStage(); renderRefresh(); }
+
+  function setView(next) {
+    view = next;
+    try { localStorage.setItem("basecamp.view", next); } catch (e) {}
+    renderAll();
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function addItem(section, text, surfaceOn, client) {
+    text = String(text || "").trim();
+    if (!text) return;
+    if (!db) { banner(NO_DB_MSG); return; }
+    var id = uid();
+    guard(db.doc("agenda/" + id).set({
+      id:id, text:text, section:section, client:client || null,
+      addedBy:(user && user._id) || null,
+      addedAt:new Date().toISOString(), surfaceOn:surfaceOn || null, status:"open", doneAt:null
+    }), "add item");
+    return true;
+  }
+  function addProspect(category, name, org, detail, value) {
+    if (!db) { banner(NO_DB_MSG); return false; }
+    var id = uid();
+    guard(db.doc("prospects/" + id).set({
+      id:id, name:name||"", org:org||"", category:category, detail:detail||"",
+      value:value||null, lastTouch:todayISO(), status:category === "scope" ? "drafting" : null,
+      nextStep:"", owner:(user && user._id) || null
+    }), "add prospect");
+    return true;
+  }
+
+  var saveTimers = {};
+  function debouncedSave(key, fn) { clearTimeout(saveTimers[key]); saveTimers[key] = setTimeout(fn, 600); }
+
+  document.addEventListener("click", function (e) {
+    var tab = e.target.closest(".tab");
+    if (tab) { setView(tab.dataset.view); return; }
+    var row = e.target.closest("[data-go]");
+    if (row) { setView(row.dataset.go); return; }
+    var t = e.target.closest("[data-act]");
+    if (!t) return;
+    var act = t.dataset.act, id = t.dataset.id;
+
+    if (act === "toggle") {
+      var it = state.agenda.filter(function (x) { return x.id === id; })[0];
+      if (it && db) {
+        var done = it.status !== "done";
+        guard(db.doc("agenda/" + id).update({
+          status: done ? "done" : "open",
+          doneAt: done ? new Date().toISOString() : null,
+          doneBy: done ? ((user && user._id) || null) : null
+        }), "toggle");
+      }
+    }
+    else if (act === "drop" && db) guard(db.doc("agenda/" + id).delete(), "remove item");
+    else if (act === "pdrop" && db) guard(db.doc("prospects/" + id).delete(), "remove prospect");
+    else if (act === "covered") { showCovered[t.dataset.key] = !showCovered[t.dataset.key]; renderStage(); }
+    else if (act === "add") {
+      var input = el("add-" + t.dataset.key);
+      if (input && input.value.trim() && addItem(t.dataset.key, input.value, null)) input.value = "";
+    }
+    else if (act === "addclient") {
+      var ci = el("cadd-" + t.dataset.client);
+      if (ci && ci.value.trim() && addItem("clients", ci.value, null, t.dataset.client)) ci.value = "";
+    }
+    else if (act === "park") {
+      var txt = el("ltText");
+      if (txt && txt.value.trim() && addItem(el("ltSection").value, txt.value, el("ltDate").value || null)) {
+        txt.value = ""; el("ltDate").value = "";
+      }
+    }
+    else if (act === "addscope") {
+      var org = el("scOrg").value.trim(), title = el("scTitle").value.trim();
+      if (org && title && addProspect("scope", "", org, title, el("scValue").value.trim() || null)) {
+        el("scOrg").value = ""; el("scTitle").value = ""; el("scValue").value = "";
+      }
+    }
+    else if (act === "addwarm") {
+      var wn = el("wmName").value.trim();
+      if (wn && addProspect("warm", wn, el("wmOrg").value.trim(), el("wmDetail").value.trim(), null)) {
+        el("wmName").value = ""; el("wmOrg").value = ""; el("wmDetail").value = "";
+      }
+    }
+    else if (act === "addcold") {
+      var nn = el("ncName").value.trim();
+      if (nn && addProspect("unclosed", nn, el("ncOrg").value.trim(), el("ncDetail").value.trim(), null)) {
+        el("ncName").value = ""; el("ncOrg").value = ""; el("ncDetail").value = "";
+      }
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var id = e.target.id || "";
+    if (id.indexOf("add-") === 0) {
+      e.preventDefault();
+      if (e.target.value.trim() && addItem(id.slice(4), e.target.value, null)) e.target.value = "";
+    } else if (id === "ltText") {
+      e.preventDefault();
+      var btn = document.querySelector('[data-act="park"]');
+      if (btn) btn.click();
+    }
+  });
+
+  document.addEventListener("input", function (e) {
+    var act = e.target.dataset && e.target.dataset.act;
+    if (!act || !db) return;
+    var id = e.target.dataset.id, val = e.target.value;
+    if (act === "nextaction") debouncedSave("na"+id, function () { guard(db.doc("clients/"+id).update({ nextAction: val }), "next action"); });
+    else if (act === "pfield") {
+      var field = e.target.dataset.field, patch = {};
+      patch[field] = val;
+      debouncedSave("pf"+id+field, function () { guard(db.doc("prospects/"+id).update(patch), "field"); });
+    }
+  });
+
+  document.addEventListener("change", function (e) {
+    var act = e.target.dataset && e.target.dataset.act;
+    if (act === "pstatus" && db) guard(db.doc("prospects/" + e.target.dataset.id).update({ status: e.target.value }), "status");
+  });
+
+  el("refreshBtn").addEventListener("click", function () {
+    if (!db) return;
+    guard(db.doc("meta/refresh").set({
+      status:"requested", requestedAt:new Date().toISOString(),
+      requestedBy:(user && user._id) || null,
+      completedAt:(state.refresh && state.refresh.completedAt) || null
+    }), "request refresh");
+  });
+
+  el("meetDate").textContent = nextTouchBase();
+  try {
+    var saved = localStorage.getItem("basecamp.view");
+    if (saved === "later") saved = "catchall";
+    var valid = ["run"].concat(SECTIONS.map(function (s) { return s.key; }));
+    if (saved && valid.indexOf(saved) >= 0) view = saved;
+  } catch (e) {}
+  renderAll();
+
+  function refreshProfiles() {
+    if (!user || !user.profiles) return Promise.resolve();
+    var ids = {};
+    state.agenda.forEach(function (it) {
+      if (it.addedBy) ids[it.addedBy] = 1;
+      if (it.doneBy) ids[it.doneBy] = 1;
+    });
+    var list = Object.keys(ids);
+    if (!list.length) return Promise.resolve();
+    return user.profiles(list).then(function (ps) { profiles = ps || {}; }).catch(function () {});
+  }
+  function collect(snap) {
+    return snap.docs.map(function (d) {
+      var body = d.data() || {}, out = {};
+      for (var k in body) out[k] = body[k];
+      out.id = out.id || d.id;
+      return out;
+    });
+  }
+
+  /* ============================================================
+     Supabase wiring. Replaces the artifact runtime with the same
+     shape (doc/collection/onSnapshot) so nothing above had to change.
+     ============================================================ */
+
+  function supaDb(sb) {
+    var TABLE = { clients:"bc_clients", prospects:"bc_prospects", agenda:"bc_agenda", meta:"bc_meta" };
+    function tbl(name) { return TABLE[name] || ("bc_" + name); }
+
+    function watch(table, handler) {
+      function pull() {
+        sb.from(table).select("id,data").then(function (r) {
+          if (r.error) { console.warn(table, r.error.message); return; }
+          handler(r.data || []);
+        });
+      }
+      pull();
+      sb.channel("bc-" + table)
+        .on("postgres_changes", { event:"*", schema:"public", table:table }, pull)
+        .subscribe();
+      return pull;
+    }
+
+    return {
+      doc: function (path) {
+        var p = path.split("/"), table = tbl(p[0]), id = p.slice(1).join("/");
+        return {
+          set: function (d) {
+            return sb.from(table).upsert({ id:id, data:d })
+              .then(function (r) { if (r.error) throw { code:"unavailable", message:r.error.message }; });
+          },
+          update: function (patch) {
+            return sb.from(table).select("data").eq("id", id).maybeSingle().then(function (r) {
+              var cur = (r.data && r.data.data) || {};
+              for (var k in patch) cur[k] = patch[k];
+              return sb.from(table).upsert({ id:id, data:cur }).then(function (w) {
+                if (w.error) throw { code:"unavailable", message:w.error.message };
+              });
+            });
+          },
+          delete: function () {
+            return sb.from(table).delete().eq("id", id)
+              .then(function (r) { if (r.error) throw { code:"unavailable", message:r.error.message }; });
+          },
+          onSnapshot: function (next) {
+            watch(table, function (rows) {
+              var hit = null;
+              for (var i = 0; i < rows.length; i++) if (rows[i].id === id) hit = rows[i];
+              next({ exists: !!hit, data: function () { return hit ? hit.data : undefined; } });
+            });
+            return function () {};
+          }
+        };
+      },
+      collection: function (name) {
+        var table = tbl(name);
+        return {
+          onSnapshot: function (next) {
+            watch(table, function (rows) {
+              next({ docs: rows.map(function (r) {
+                return { id:r.id, data: function () { return r.data; } };
+              }) });
+            });
+            return function () {};
+          }
+        };
+      }
+    };
+  }
+
+  /* Who is using it. No sign-in on a static host, so we ask once and
+     remember, which is what makes "added by Julie" work. */
+  var PEOPLE = { carolyn:"Carolyn MacBain-Waldo", julie:"Julie McCarter" };
+
+  function askWho() {
+    return new Promise(function (resolve) {
+      var saved = null;
+      try { saved = localStorage.getItem("basecamp.who"); } catch (e) {}
+      if (saved && PEOPLE[saved]) return resolve(saved);
+      var gate = el("gate");
+      gate.hidden = false;
+      gate.innerHTML =
+        '<div class="gate-box"><h2>Who\u2019s here?</h2>' +
+        '<p>So your additions get your name on them.</p>' +
+        '<div class="gate-row">' +
+        '<button class="btn" data-who="carolyn" type="button">Carolyn</button>' +
+        '<button class="btn" data-who="julie" type="button">Julie</button>' +
+        '</div></div>';
+      gate.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-who]");
+        if (!b) return;
+        try { localStorage.setItem("basecamp.who", b.dataset.who); } catch (e2) {}
+        gate.hidden = true; gate.innerHTML = "";
+        resolve(b.dataset.who);
+      });
+    });
+  }
+
+  function askPassword() {
+    return new Promise(function (resolve) {
+      if (!BASE_CAMP_PASSWORD) return resolve(true);
+      var ok = false;
+      try { ok = localStorage.getItem("basecamp.pw") === BASE_CAMP_PASSWORD; } catch (e) {}
+      if (ok) return resolve(true);
+      var gate = el("gate");
+      gate.hidden = false;
+      gate.innerHTML =
+        '<div class="gate-box"><h2>Base Camp</h2>' +
+        '<p>Plan + Pivot Collective, internal.</p>' +
+        '<div class="gate-row"><input type="password" id="pwInput" placeholder="Password" autocomplete="current-password">' +
+        '<button class="btn" id="pwGo" type="button">Enter</button></div>' +
+        '<p class="gate-err" id="pwErr" hidden>Not it. Try again.</p></div>';
+      function attempt() {
+        var v = el("pwInput").value;
+        if (v === BASE_CAMP_PASSWORD) {
+          try { localStorage.setItem("basecamp.pw", v); } catch (e) {}
+          gate.hidden = true; gate.innerHTML = ""; resolve(true);
+        } else {
+          el("pwErr").hidden = false; el("pwInput").value = ""; el("pwInput").focus();
+        }
+      }
+      gate.addEventListener("click", function (e) { if (e.target.id === "pwGo") attempt(); });
+      gate.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); attempt(); } });
+      setTimeout(function () { var i = el("pwInput"); if (i) i.focus(); }, 50);
+    });
+  }
+
+  (async function init() {
+    await askPassword();
+
+    var configured = SUPABASE_URL.indexOf("YOUR-PROJECT") === -1 &&
+                     SUPABASE_ANON_KEY.indexOf("YOUR-ANON-KEY") === -1;
+
+    if (!configured || !window.supabase) {
+      applySeed();
+      banner(!configured
+        ? "Not connected to Supabase yet. Fill in SUPABASE_URL and SUPABASE_ANON_KEY at the top of this file. Until then this is a read-only snapshot."
+        : "Couldn\u2019t load the Supabase library, so this is a read-only snapshot.");
+      renderAll();
+      return;
+    }
+
+    var whoKey = await askWho();
+    user = {
+      _id: whoKey,
+      profiles: function (ids) {
+        var out = {};
+        (ids || []).forEach(function (i) { out[i] = { name: PEOPLE[i] || "Someone" }; });
+        return Promise.resolve(out);
+      }
+    };
+    el("whoami").innerHTML = "You\u2019re in as <b>" + esc(PEOPLE[whoKey]) + "</b>";
+
+    var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    db = supaDb(sb);
+    banner(null);
+
+    db.collection("agenda").onSnapshot(function (snap) {
+      state.agenda = withSeed(collect(snap), "agenda");
+      refreshProfiles().then(renderAll);
+    });
+    db.collection("clients").onSnapshot(function (snap) {
+      state.clients = withSeed(collect(snap), "clients"); renderAll();
+    });
+    db.collection("prospects").onSnapshot(function (snap) {
+      state.prospects = withSeed(collect(snap), "prospects"); renderAll();
+    });
+    db.doc("meta/refresh").onSnapshot(function (snap) {
+      state.refresh = snap.exists ? snap.data() : null; renderRefresh();
+    });
+  })();
+})();
+</script>
+
+</body>
+</html>
